@@ -209,6 +209,10 @@ def _log_block(data: dict, command: str, reason: str) -> bool:
 
 def main() -> int:
     data = _input_data()
+    tool_name = data.get("tool_name")
+    if tool_name is not None and tool_name != "Bash":
+        return 0
+
     tool_input = data.get("tool_input")
     if not isinstance(tool_input, dict):
         return 0
