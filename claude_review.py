@@ -8,6 +8,7 @@ out, executes, or modifies the reviewed repository.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -63,6 +64,36 @@ def fetch_diff(pr: PullRequest, token: Optional[str] = None) -> str:
     if len(data) > MAX_DIFF_BYTES:
         raise RuntimeError(f"diff is larger than the {MAX_DIFF_BYTES // 1000} KB safety limit")
     return data.decode("utf-8", errors="replace")
+
+
+def post_review_comment(pr: PullRequest, review: str, token: Optional[str]) -> str:
+    """Post a generated review as an issue comment when explicitly requested."""
+
+    if not token:
+        raise RuntimeError("posting a comment requires --github-token or GITHUB_TOKEN")
+    endpoint = f"https://api.github.com/repos/{pr.owner}/{pr.repo}/issues/{pr.number}/comments"
+    request = Request(
+        endpoint,
+        data=json.dumps({"body": review}).encode("utf-8"),
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "User-Agent": "claude-pr-review-agent/1.0",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        raise RuntimeError(f"GitHub returned HTTP {exc.code} while posting the review") from exc
+    except (URLError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"could not post the review comment: {exc}") from exc
+    comment_url = payload.get("html_url")
+    if not isinstance(comment_url, str) or not comment_url:
+        raise RuntimeError("GitHub did not return a URL for the created review comment")
+    return comment_url
 
 
 def build_prompt(pr: PullRequest, diff: str) -> str:
@@ -155,6 +186,11 @@ def parse_args(argv: Optional[Iterable[str]] = None) -> argparse.Namespace:
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--github-token", default=os.environ.get("GITHUB_TOKEN"))
     parser.add_argument("--save", help="also save the Markdown review to this path")
+    parser.add_argument(
+        "--post-comment",
+        action="store_true",
+        help="post the review to the pull request as a GitHub issue comment",
+    )
     return parser.parse_args(argv)
 
 
@@ -164,6 +200,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         pr = parse_pr_url(args.pr)
         diff = fetch_diff(pr, args.github_token)
         review = validate_review(run_claude(build_prompt(pr, diff), args.claude_bin, args.model, args.timeout))
+        comment_url = post_review_comment(pr, review, args.github_token) if args.post_comment else None
     except (ValueError, RuntimeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -171,6 +208,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         with open(args.save, "w", encoding="utf-8") as output:
             output.write(review + "\n")
     print(review)
+    if comment_url:
+        print(f"\nPosted review comment: {comment_url}")
     return 0
 
 

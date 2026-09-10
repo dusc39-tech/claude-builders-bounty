@@ -1,4 +1,5 @@
 import io
+import json
 import subprocess
 import unittest
 from unittest.mock import patch
@@ -53,6 +54,28 @@ High — the affected control flow is visible in the patch.
         self.assertIn("--print", command)
         self.assertIn("--max-turns", command)
         self.assertEqual(run.call_args.kwargs["input"], "diff text")
+
+    def test_post_review_comment_requires_token(self):
+        pr = claude_review.PullRequest("acme", "widget", 42)
+        with self.assertRaisesRegex(RuntimeError, "requires --github-token"):
+            claude_review.post_review_comment(pr, self.REVIEW, None)
+
+    @patch("claude_review.urlopen")
+    def test_post_review_comment_uses_github_comments_api(self, urlopen):
+        response = urlopen.return_value.__enter__.return_value
+        response.read.return_value = json.dumps(
+            {"html_url": "https://github.com/acme/widget/pull/42#issuecomment-1"}
+        ).encode("utf-8")
+        pr = claude_review.PullRequest("acme", "widget", 42)
+
+        result = claude_review.post_review_comment(pr, self.REVIEW, "secret-token")
+
+        self.assertEqual(result, "https://github.com/acme/widget/pull/42#issuecomment-1")
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.full_url, "https://api.github.com/repos/acme/widget/issues/42/comments")
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(json.loads(request.data.decode("utf-8")), {"body": self.REVIEW})
+        self.assertEqual(request.headers["Authorization"], "Bearer secret-token")
 
 
 if __name__ == "__main__":

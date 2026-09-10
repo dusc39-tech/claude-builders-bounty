@@ -35,6 +35,18 @@ The output contains:
 - actionable improvement suggestions; and
 - a Low/Medium/High confidence score.
 
+To publish the generated Markdown as a pull-request comment, pass a GitHub
+token explicitly (or set `GITHUB_TOKEN`) together with `--post-comment`:
+
+```bash
+GITHUB_TOKEN=ghp_example bin/claude-review \
+  --pr https://github.com/owner/repo/pull/123 --post-comment
+```
+
+The comment is never posted unless `--post-comment` is supplied. Use a token
+with only the minimum repository issue-comment permission needed for the target
+repository.
+
 ## Verification
 
 ```bash
