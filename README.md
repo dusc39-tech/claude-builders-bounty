@@ -41,6 +41,15 @@ You're in the right place.
 - Payment is handled by [Opire](https://opire.dev) (Stripe)
 - Quality over speed — a solid PR beats a fast one
 
+## Claude PR Review Agent (Bounty #4)
+
+This repository includes a read-only CLI that downloads a public pull-request
+diff and asks Claude Code for a structured Markdown review. It reports the
+change summary, concrete risks, actionable suggestions, and confidence score.
+
+See [INSTALL.md](INSTALL.md) for setup and usage. The implementation uses only
+the Python standard library and never executes code from the reviewed PR.
+
 ---
 
 ## Community
