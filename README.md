@@ -50,13 +50,13 @@ You're in the right place.
 
 ## Destructive Bash Hook
 
-The hook in `block_destructive_bash.py` is installed with:
-
-```sh
-mkdir -p ~/.claude/hooks && cp block_destructive_bash.py ~/.claude/hooks/block_destructive_bash.py && chmod +x ~/.claude/hooks/block_destructive_bash.py
-```
-
-Then add the hook entry from `settings.json` to your Claude Code settings. It blocks recursive force removal, force pushes, `DROP TABLE`, `TRUNCATE`, and `DELETE FROM` without `WHERE`, while leaving safe commands silent. Blocked attempts are recorded in `~/.claude/hooks/blocked.log`.
+For a project-local setup, keep `block_destructive_bash.py` at the project
+root and copy `settings.json` to `.claude/settings.json`. For a user-wide
+setup, use the command in `INSTALL.md` and merge `global-settings.json` into
+your global settings. It blocks recursive force removal, force pushes,
+`DROP TABLE`, `TRUNCATE`, and `DELETE FROM` without `WHERE`, while leaving
+safe commands silent. Blocked attempts are recorded in
+`~/.claude/hooks/blocked.log`.
 
 ---
 
