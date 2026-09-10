@@ -41,12 +41,22 @@ You're in the right place.
 - Payment is handled by [Opire](https://opire.dev) (Stripe)
 - Quality over speed — a solid PR beats a fast one
 
----
-
 ## Community
 
 - 🐦 X: [@ClaudeBounty](https://x.com/ClaudeBounty)
 - 📧 Contact: claudebounty@gmail.com
+
+---
+
+## Destructive Bash Hook
+
+The hook in `block_destructive_bash.py` is installed with:
+
+```sh
+mkdir -p ~/.claude/hooks && cp block_destructive_bash.py ~/.claude/hooks/block_destructive_bash.py && chmod +x ~/.claude/hooks/block_destructive_bash.py
+```
+
+Then add the hook entry from `settings.json` to your Claude Code settings. It blocks recursive force removal, force pushes, `DROP TABLE`, `TRUNCATE`, and `DELETE FROM` without `WHERE`, while leaving safe commands silent. Blocked attempts are recorded in `~/.claude/hooks/blocked.log`.
 
 ---
 
