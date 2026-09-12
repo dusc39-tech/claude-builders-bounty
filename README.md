@@ -51,3 +51,37 @@ You're in the right place.
 ---
 
 *Started by the Claude builder community · March 2026 · MIT License*
+
+## Destructive-command hook (Bounty #3)
+
+This repository also includes a Claude Code `PreToolUse` hook that blocks the
+following destructive Bash commands before execution:
+
+* `rm -rf`
+* `DROP TABLE`
+* `git push --force` (including `--force-with-lease` and `-f`)
+* `TRUNCATE`
+* `DELETE FROM` when the statement has no `WHERE` clause
+
+Blocked attempts are written as one JSON object per line to
+`~/.claude/hooks/blocked.log`. The log records the UTC timestamp, attempted
+command, and project path. Safe commands produce no output and remain under
+Claude Code's normal permission flow.
+
+### Install
+
+From the repository root, run one command:
+
+```bash
+python3 install.py
+```
+
+The installer copies the hook to `~/.claude/hooks/block_destructive.py` and
+merges a Bash `PreToolUse` entry into `~/.claude/settings.json` without
+discarding existing settings. Restart Claude Code after installation.
+
+### Test
+
+```bash
+python3 -m unittest discover -s tests -v
+```
